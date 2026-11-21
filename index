@@ -1,0 +1,587 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MapMyScrap | Sampaloc Manila</title>
+
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+
+<style>
+:root {
+  --green: #176b4b;
+  --light: #e9f5ee;
+  --dark: #17251e;
+  --gray: #68766e;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: #f5f8f5;
+  color: var(--dark);
+}
+
+/* HEADER */
+header {
+  background: linear-gradient(120deg, #12563e, #23845b);
+  color: white;
+  padding: 25px 7%;
+}
+
+.logo {
+  font-size: 28px;
+  font-weight: bold;
+}
+
+.logo span {
+  color: #bde9c9;
+}
+
+header p {
+  margin-bottom: 0;
+  font-size: 14px;
+}
+
+/* MAIN */
+main {
+  max-width: 1250px;
+  margin: 25px auto;
+  padding: 0 18px;
+}
+
+.intro {
+  margin-bottom: 20px;
+}
+
+h1 {
+  font-size: 27px;
+  margin-bottom: 5px;
+}
+
+.subtitle {
+  color: var(--gray);
+  font-size: 14px;
+}
+
+/* LAYOUT */
+.layout {
+  display: grid;
+  grid-template-columns: 350px 1fr;
+  gap: 18px;
+}
+
+.panel, .map-container {
+  background: white;
+  border-radius: 15px;
+  overflow: hidden;
+  box-shadow: 0 5px 20px #173d2410;
+}
+
+/* SEARCH */
+.controls {
+  padding: 16px;
+}
+
+input {
+  width: 100%;
+  padding: 13px;
+  border: 1px solid #cedbd1;
+  border-radius: 9px;
+  font-size: 14px;
+  outline: none;
+}
+
+input:focus {
+  border-color: var(--green);
+}
+
+.filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin-top: 13px;
+}
+
+.filter {
+  padding: 8px 11px;
+  border: 1px solid #dce7df;
+  border-radius: 20px;
+  background: white;
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.filter.active {
+  background: var(--green);
+  color: white;
+}
+
+.count {
+  font-size: 12px;
+  color: var(--gray);
+  margin-top: 15px;
+}
+
+/* LOCATION LIST */
+#places {
+  max-height: 550px;
+  overflow-y: auto;
+  padding: 0 12px 12px;
+}
+
+.place {
+  padding: 13px 10px;
+  border-bottom: 1px solid #edf1ed;
+  cursor: pointer;
+}
+
+.place:hover {
+  background: #f4faf5;
+}
+
+.place h3 {
+  font-size: 14px;
+  margin: 5px 0;
+}
+
+.place p {
+  font-size: 12px;
+  color: var(--gray);
+  line-height: 1.5;
+}
+
+.pill {
+  display: inline-block;
+  font-size: 10px;
+  font-weight: bold;
+  padding: 5px 8px;
+  border-radius: 20px;
+  background: #eaf4ed;
+  color: var(--green);
+}
+
+.pill.mrf {
+  background: #fff2dc;
+  color: #8b5b08;
+}
+
+.pill.recycle {
+  background: #e8f0ff;
+  color: #315e9c;
+}
+
+/* MAP */
+.map-heading {
+  padding: 15px;
+  font-weight: bold;
+  border-bottom: 1px solid #eee;
+}
+
+#map {
+  height: 650px;
+  width: 100%;
+}
+
+.notice {
+  margin-top: 15px;
+  font-size: 11px;
+  color: var(--gray);
+  line-height: 1.6;
+}
+
+@media(max-width: 800px) {
+  .layout {
+    grid-template-columns: 1fr;
+  }
+
+  #map {
+    height: 430px;
+  }
+
+  #places {
+    max-height: 300px;
+  }
+}
+</style>
+</head>
+
+<body>
+
+<header>
+  <div class="logo">♻ MapMy<span>Scrap</span></div>
+  <p>Find. Recycle. Make a Difference.</p>
+</header>
+
+<main>
+
+  <section class="intro">
+    <h1>Explore Recycling Locations</h1>
+    <div class="subtitle">
+      Discover scrapyards, MRFs, and recycling centers around Sampaloc, Manila.
+    </div>
+  </section>
+
+  <div class="layout">
+
+    <!-- LOCATION SIDEBAR -->
+    <section class="panel">
+
+      <div class="controls">
+
+        <input
+          type="search"
+          id="search"
+          placeholder="Search a location or street..."
+        >
+
+        <div class="filters">
+
+          <button class="filter active" data-filter="all">
+            All
+          </button>
+
+          <button class="filter" data-filter="Scrapyard">
+            Scrapyards
+          </button>
+
+          <button class="filter" data-filter="MRF">
+            MRFs
+          </button>
+
+          <button class="filter" data-filter="Recycling center">
+            Recycling
+          </button>
+
+        </div>
+
+        <div class="count" id="count">
+          Loading locations...
+        </div>
+
+      </div>
+
+      <div id="places"></div>
+
+    </section>
+
+    <!-- MAP -->
+    <section class="map-container">
+
+      <div class="map-heading">
+        📍 Map of Sampaloc, Manila
+      </div>
+
+      <div id="map"></div>
+
+    </section>
+
+  </div>
+
+  <p class="notice">
+    Note: Location information must be verified before visiting.
+    Facility listings and operating hours may change. MRF listings
+    should be confirmed with the respective barangay or local government.
+    Map data © OpenStreetMap contributors.
+  </p>
+
+</main>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<script>
+
+// =====================================
+// MAP INITIALIZATION
+// =====================================
+
+const map = L.map('map').setView(
+  [14.6091, 120.9890], 14
+);
+
+L.tileLayer(
+  'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+  {
+    attribution: '&copy; OpenStreetMap contributors',
+    maxZoom: 19
+  }
+).addTo(map);
+
+
+// =====================================
+// LOCATION DATABASE
+// =====================================
+
+// Add verified locations here.
+// Coordinates are approximate placeholders;
+// update them with verified GPS coordinates.
+
+const locations = [
+
+  {
+    name: "Nathaniell's Junkshop",
+    type: "Scrapyard",
+    address: "652 Lacson Avenue, Sampaloc, Manila",
+    lat: 14.6150,
+    lng: 120.9860,
+    phone: "0935 721 6573"
+  },
+
+  {
+    name: "Duncan Scrap Dealer",
+    type: "Recycling center",
+    address: "361 Lacson Avenue, Sampaloc, Manila",
+    lat: 14.6100,
+    lng: 120.9870,
+    phone: "0917 844 3481"
+  },
+
+  {
+    name: "Alfred Trading",
+    type: "Scrapyard",
+    address: "843 Domingo Santiago Street, Sampaloc, Manila",
+    lat: 14.6160,
+    lng: 120.9880,
+    phone: "02 8714 7523"
+  },
+
+  {
+    name: "Bigbos Junk Shop",
+    type: "Scrapyard",
+    address: "2015 Retiro Street, Sampaloc, Manila",
+    lat: 14.6200,
+    lng: 120.9890,
+    phone: "02 7958 2011"
+  },
+
+  {
+    name: "Dapitan Junk Shop",
+    type: "Recycling center",
+    address: "1850 Dapitan Street, Sampaloc, Manila",
+    lat: 14.6230,
+    lng: 120.9910,
+    phone: "0946 460 8872"
+  },
+
+  {
+    name: "#43 Trabajo Junkshop",
+    type: "Recycling center",
+    address: "43 M. Dela Fuente Street, Sampaloc, Manila",
+    lat: 14.6070,
+    lng: 120.9870,
+    phone: "Not available"
+  },
+
+  {
+    name: "Capuz Junk Shop",
+    type: "Recycling center",
+    address: "1122 Antipolo Street, Sampaloc, Manila",
+    lat: 14.6140,
+    lng: 120.9920,
+    phone: "Not available"
+  },
+
+  {
+    name: "A.H. Lacson Junk Shop",
+    type: "Scrapyard",
+    address: "409 A.H. Lacson corner G. Tuazon, Manila",
+    lat: 14.6110,
+    lng: 120.9850,
+    phone: "0939 941 9203"
+  },
+
+  {
+    name: "Lovelyn Junkshop",
+    type: "Recycling center",
+    address: "318 Blumentritt Road, Sampaloc, Manila",
+    lat: 14.6190,
+    lng: 120.9860,
+    phone: "Not available"
+  },
+
+  {
+    name: "Metrica Enterprises",
+    type: "Scrapyard",
+    address: "1967 Laon Laan Street, Sampaloc, Manila",
+    lat: 14.6220,
+    lng: 120.9840,
+    phone: "02 8741 6044"
+  }
+
+];
+
+
+// =====================================
+// MARKERS
+// =====================================
+
+let markers = [];
+
+function addMarkers(filteredLocations) {
+
+  markers.forEach(marker => map.removeLayer(marker));
+  markers = [];
+
+  filteredLocations.forEach(location => {
+
+    const marker = L.marker([
+      location.lat,
+      location.lng
+    ]).addTo(map);
+
+    marker.bindPopup(`
+      <b>${location.name}</b>
+      <br>
+      ${location.type}
+      <br><br>
+      📍 ${location.address}
+      <br>
+      ☎ ${location.phone}
+      <br><br>
+      <a
+        href="https://www.google.com/maps/search/?api=1&query=${location.lat},${location.lng}"
+        target="_blank"
+        rel="noopener"
+      >
+        Get Directions
+      </a>
+    `);
+
+    markers.push(marker);
+
+  });
+
+}
+
+
+// =====================================
+// LOCATION DISPLAY
+// =====================================
+
+let activeFilter = "all";
+
+const placesContainer = document.getElementById("places");
+const searchInput = document.getElementById("search");
+const count = document.getElementById("count");
+
+function displayLocations() {
+
+  const search = searchInput.value.toLowerCase();
+
+  const filtered = locations.filter(location => {
+
+    const matchesCategory =
+      activeFilter === "all" ||
+      location.type === activeFilter;
+
+    const matchesSearch =
+      location.name.toLowerCase().includes(search) ||
+      location.address.toLowerCase().includes(search);
+
+    return matchesCategory && matchesSearch;
+
+  });
+
+  count.textContent =
+    filtered.length + " locations found";
+
+  placesContainer.innerHTML = "";
+
+  if (filtered.length === 0) {
+    placesContainer.innerHTML =
+      "<p>No locations found. Try another search.</p>";
+  }
+
+  filtered.forEach(location => {
+
+    const item = document.createElement("div");
+
+    item.className = "place";
+
+    const categoryClass =
+      location.type === "MRF" ? "mrf" :
+      location.type === "Recycling center" ? "recycle" : "";
+
+    item.innerHTML = `
+      <span class="pill ${categoryClass}">
+        ${location.type}
+      </span>
+
+      <h3>${location.name}</h3>
+
+      <p>📍 ${location.address}</p>
+    `;
+
+    item.addEventListener("click", () => {
+
+      map.setView(
+        [location.lat, location.lng],
+        17
+      );
+
+      const marker = markers.find(m =>
+        m.getLatLng().lat === location.lat &&
+        m.getLatLng().lng === location.lng
+      );
+
+      if (marker) marker.openPopup();
+
+    });
+
+    placesContainer.appendChild(item);
+
+  });
+
+  addMarkers(filtered);
+
+}
+
+
+// =====================================
+// CATEGORY FILTERS
+// =====================================
+
+document.querySelectorAll(".filter").forEach(button => {
+
+  button.addEventListener("click", () => {
+
+    document.querySelectorAll(".filter").forEach(btn =>
+      btn.classList.remove("active")
+    );
+
+    button.classList.add("active");
+
+    activeFilter = button.dataset.filter;
+
+    displayLocations();
+
+  });
+
+});
+
+
+// =====================================
+// SEARCH
+// =====================================
+
+searchInput.addEventListener(
+  "input",
+  displayLocations
+);
+
+
+// =====================================
+// INITIAL DISPLAY
+// =====================================
+
+displayLocations();
+
+</script>
+
+</body>
+</html>
